@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "Order Execution Engine",
+    "description": "API collection for testing limit order execution with DEX routing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Submit Limit Order (WebSocket)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Upgrade",
+                "value": "websocket"
+              },
+              {
+                "key": "Connection",
+                "value": "Upgrade"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"limit\",\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amountIn\": 100,\n  \"limitPrice\": 0.85\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/execute",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "execute"]
+            },
+            "description": "Submit a limit order and receive real-time status updates via WebSocket. The order will execute when market price meets or exceeds the limit price."
+          }
+        },
+        {
+          "name": "Get Order Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Retrieve the current status and details of a specific order by ID."
+          }
+        },
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get a paginated list of all orders in the system."
+          }
+        },
+        {
+          "name": "Get Queue Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/queue/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queue", "metrics"]
+            },
+            "description": "View current queue statistics including waiting, active, completed, and failed orders."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the server is running and responsive."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "ord_1234567890_abc123",
+      "type": "string"
+    }
+  ]
+}

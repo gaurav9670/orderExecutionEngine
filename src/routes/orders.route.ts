@@ -6,46 +6,62 @@ import { OrderStatus, OrderUpdateMessage } from '../types';
 import { logger } from '../utils/logger';
 
 export async function orderRoutes(app: FastifyInstance) {
-  app.post<{ Body: CreateOrderInput }>(
-    '/api/orders/execute',
-    {
-      websocket: true,
-      schema: {
-        body: {
-          type: 'object',
-          required: ['type', 'tokenIn', 'tokenOut', 'amountIn', 'limitPrice'],
-          properties: {
-            type: { type: 'string', enum: ['limit'] },
-            tokenIn: { type: 'string' },
-            tokenOut: { type: 'string' },
-            amountIn: { type: 'number' },
-            limitPrice: { type: 'number' },
-          },
-        },
-      },
-    },
+  app.post<{ Body: CreateOrderInput }>('/api/orders', async (req, reply) => {
+    try {
+      const validatedInput = createOrderSchema.parse(req.body);
+      const order = await orderService.createOrder(validatedInput);
+
+      await orderQueue.addOrder({
+        orderId: order.id,
+        tokenIn: validatedInput.tokenIn,
+        tokenOut: validatedInput.tokenOut,
+        amountIn: validatedInput.amountIn,
+        limitPrice: validatedInput.limitPrice,
+      });
+
+      return reply.code(201).send({
+        orderId: order.id,
+        status: order.status,
+        message: 'Order created successfully. Connect to WebSocket for updates.',
+        wsUrl: `/api/orders/${order.id}/ws`,
+      });
+    } catch (error: any) {
+      logger.error({ error }, 'Error creating order');
+      return reply.code(400).send({
+        error: error.message || 'Failed to create order',
+      });
+    }
+  });
+
+  app.get(
+    '/api/orders/:orderId/ws',
+    { websocket: true },
     async (connection: any, req: FastifyRequest) => {
       const socket = connection.socket;
+      const { orderId } = req.params as { orderId: string };
 
       try {
-        const body = req.body as CreateOrderInput;
-        const validatedInput = createOrderSchema.parse(body);
-
-        const order = await orderService.createOrder(validatedInput);
+        const order = await orderService.getOrder(orderId);
+        
+        if (!order) {
+          socket.send(JSON.stringify({ type: 'error', message: 'Order not found' }));
+          socket.close();
+          return;
+        }
 
         socket.send(
           JSON.stringify({
-            type: 'order_created',
+            type: 'connected',
             orderId: order.id,
             status: order.status,
           })
         );
 
-        logger.info({ orderId: order.id }, 'Order created, WebSocket connected');
+        logger.info({ orderId }, 'WebSocket connected for order updates');
 
-        orderQueue.registerStatusCallback(order.id, (status: OrderStatus, data?: any) => {
+        orderQueue.registerStatusCallback(orderId, (status: OrderStatus, data?: any) => {
           const update: OrderUpdateMessage = {
-            orderId: order.id,
+            orderId,
             status,
             selectedDex: data?.selectedDex,
             executedPrice: data?.executedPrice,
@@ -56,36 +72,28 @@ export async function orderRoutes(app: FastifyInstance) {
 
           if (socket.readyState === 1) {
             socket.send(JSON.stringify({ type: 'status_update', ...update }));
-            logger.debug({ orderId: order.id, status }, 'Status update sent via WebSocket');
+            logger.debug({ orderId, status }, 'Status update sent via WebSocket');
           }
         });
 
-        await orderQueue.addOrder({
-          orderId: order.id,
-          tokenIn: validatedInput.tokenIn,
-          tokenOut: validatedInput.tokenOut,
-          amountIn: validatedInput.amountIn,
-          limitPrice: validatedInput.limitPrice,
-        });
-
         socket.on('close', () => {
-          orderQueue.unregisterStatusCallback(order.id);
-          logger.info({ orderId: order.id }, 'WebSocket connection closed');
+          orderQueue.unregisterStatusCallback(orderId);
+          logger.info({ orderId }, 'WebSocket connection closed');
         });
 
         socket.on('error', (err: Error) => {
-          logger.error({ err, orderId: order.id }, 'WebSocket error');
-          orderQueue.unregisterStatusCallback(order.id);
+          logger.error({ err, orderId }, 'WebSocket error');
+          orderQueue.unregisterStatusCallback(orderId);
         });
 
       } catch (error: any) {
-        logger.error({ error }, 'Error processing order request');
+        logger.error({ error }, 'Error in WebSocket connection');
         
         if (socket.readyState === 1) {
           socket.send(
             JSON.stringify({
               type: 'error',
-              message: error.message || 'Failed to process order',
+              message: error.message || 'WebSocket connection failed',
             })
           );
           socket.close();

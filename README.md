@@ -91,11 +91,9 @@ Key configuration options in `.env`:
 
 ## API Documentation
 
-### Submit Order (with WebSocket upgrade)
+### Submit Order
 
-**Endpoint**: `POST /api/orders/execute`
-
-**WebSocket Connection**: The same endpoint upgrades to WebSocket for status streaming.
+**Endpoint**: `POST /api/orders`
 
 **Request Body**:
 ```json
@@ -108,12 +106,26 @@ Key configuration options in `.env`:
 }
 ```
 
-**WebSocket Messages**:
-
-Initial response:
+**Response**:
 ```json
 {
-  "type": "order_created",
+  "orderId": "ord_1234567890_abc123",
+  "status": "pending",
+  "message": "Order created successfully. Connect to WebSocket for updates.",
+  "wsUrl": "/api/orders/ord_1234567890_abc123/ws"
+}
+```
+
+### Connect to WebSocket for Updates
+
+**Endpoint**: `GET /api/orders/:orderId/ws` (WebSocket)
+
+**WebSocket Messages**:
+
+Initial connection:
+```json
+{
+  "type": "connected",
   "orderId": "ord_1234567890_abc123",
   "status": "pending"
 }
@@ -172,14 +184,15 @@ Returns queue statistics:
 
 ### Order Execution Flow
 
-1. **Submission**: Client submits limit order via POST request
-2. **WebSocket Upgrade**: Connection immediately upgrades to WebSocket
-3. **Queueing**: Order added to BullMQ queue with retry configuration
-4. **Price Check**: System fetches quotes from both Raydium and Meteora
-5. **Price Matching**: Compares best market price against limit price
-6. **Retry Logic**: If price not met, job retries with exponential backoff
-7. **Execution**: When price matches, order routes to best DEX and executes
-8. **Confirmation**: Transaction hash and final price sent via WebSocket
+1. **Submission**: Client submits limit order via POST to `/api/orders`
+2. **Response**: Server returns orderId and WebSocket URL
+3. **WebSocket Connection**: Client connects to `/api/orders/:orderId/ws`
+4. **Queueing**: Order added to BullMQ queue with retry configuration
+5. **Price Check**: System fetches quotes from both Raydium and Meteora
+6. **Price Matching**: Compares best market price against limit price
+7. **Retry Logic**: If price not met, job retries with exponential backoff
+8. **Execution**: When price matches, order routes to best DEX and executes
+9. **Confirmation**: Transaction hash and final price sent via WebSocket
 
 ### Limit Order Matching
 

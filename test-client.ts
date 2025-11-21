@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import fetch from 'node-fetch';
 
 const ORDER_PAYLOAD = {
   type: 'limit',
@@ -8,13 +9,26 @@ const ORDER_PAYLOAD = {
   limitPrice: 0.85,
 };
 
-function testWebSocketOrder() {
-  const ws = new WebSocket('ws://localhost:3000/api/orders/execute');
+async function testOrder() {
+  console.log('Creating order...');
+  
+  const response = await fetch('http://localhost:3000/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ORDER_PAYLOAD),
+  });
+
+  const data = await response.json();
+  console.log('✓ Order created:', data);
+
+  const orderId = data.orderId;
+  const wsUrl = `ws://localhost:3000/api/orders/${orderId}/ws`;
+  
+  console.log(`\nConnecting to WebSocket: ${wsUrl}`);
+  const ws = new WebSocket(wsUrl);
 
   ws.on('open', () => {
     console.log('✓ WebSocket connected');
-    console.log('Sending order:', ORDER_PAYLOAD);
-    ws.send(JSON.stringify(ORDER_PAYLOAD));
   });
 
   ws.on('message', (data) => {
@@ -36,4 +50,4 @@ function testWebSocketOrder() {
   });
 }
 
-testWebSocketOrder();
+testOrder().catch(console.error);

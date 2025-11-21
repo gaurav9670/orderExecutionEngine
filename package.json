@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:client": "tsx test-client.ts",
     "lint": "eslint src --ext .ts"
   },
   "keywords": ["solana", "dex", "trading", "order-execution"],
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/pg": "^8.11.4",
+    "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "eslint": "^8.57.0",
@@ -35,6 +37,7 @@
     "@types/jest": "^29.5.12",
     "ts-jest": "^29.1.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "ws": "^8.16.0"
   }
 }

@@ -24,8 +24,8 @@ export async function orderRoutes(app: FastifyInstance) {
         },
       },
     },
-    async (connection, req: FastifyRequest) => {
-      const { socket } = connection;
+    async (connection: any, req: FastifyRequest) => {
+      const socket = connection.socket;
 
       try {
         const body = req.body as CreateOrderInput;
@@ -54,7 +54,7 @@ export async function orderRoutes(app: FastifyInstance) {
             timestamp: new Date(),
           };
 
-          if (socket.readyState === socket.OPEN) {
+          if (socket.readyState === 1) {
             socket.send(JSON.stringify({ type: 'status_update', ...update }));
             logger.debug({ orderId: order.id, status }, 'Status update sent via WebSocket');
           }
@@ -81,7 +81,7 @@ export async function orderRoutes(app: FastifyInstance) {
       } catch (error: any) {
         logger.error({ error }, 'Error processing order request');
         
-        if (socket.readyState === socket.OPEN) {
+        if (socket.readyState === 1) {
           socket.send(
             JSON.stringify({
               type: 'error',

@@ -71,6 +71,15 @@ npm run dev
 
 The server will start on http://localhost:3000
 
+### Quick Start Script
+
+For a one-command setup:
+```bash
+chmod +x setup.sh && ./setup.sh
+```
+
+This will start Docker containers, install dependencies, and build the project.
+
 ### Environment Variables
 
 Key configuration options in `.env`:
@@ -221,6 +230,17 @@ The current implementation uses mock DEX responses with realistic delays:
 - Price variations: 2-5% difference between DEXs
 
 This allows testing the full order flow without requiring devnet tokens or network access.
+
+## Demo Video
+
+[Watch the demo video here](YOUR_YOUTUBE_LINK)
+
+The video demonstrates:
+- Submitting multiple limit orders simultaneously
+- Real-time WebSocket status updates
+- DEX routing decisions in the logs
+- Queue processing concurrent orders
+- Limit order matching when price targets are met
 
 ## Production Deployment
 

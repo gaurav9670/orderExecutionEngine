@@ -17,7 +17,8 @@ describe('Order Schema Validation', () => {
     });
 
     it('should reject order without type', () => {
-      const { type: _type, ...orderWithoutType } = validOrder;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { type, ...orderWithoutType } = validOrder;
       const result = createOrderSchema.safeParse(orderWithoutType);
       expect(result.success).toBe(false);
     });
@@ -29,13 +30,15 @@ describe('Order Schema Validation', () => {
     });
 
     it('should reject order without tokenIn', () => {
-      const { tokenIn: _tokenIn, ...orderWithoutToken } = validOrder;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tokenIn, ...orderWithoutToken } = validOrder;
       const result = createOrderSchema.safeParse(orderWithoutToken);
       expect(result.success).toBe(false);
     });
 
     it('should reject order without tokenOut', () => {
-      const { tokenOut: _tokenOut, ...orderWithoutToken } = validOrder;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { tokenOut, ...orderWithoutToken } = validOrder;
       const result = createOrderSchema.safeParse(orderWithoutToken);
       expect(result.success).toBe(false);
     });

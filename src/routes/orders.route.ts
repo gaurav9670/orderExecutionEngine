@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { SocketStream } from '@fastify/websocket';
 import { createOrderSchema, CreateOrderInput } from '../models/order.schema';
 import { orderService } from '../services/order.service';
 import { orderQueue } from '../queues/order.queue';
@@ -25,7 +24,7 @@ export async function orderRoutes(app: FastifyInstance) {
         },
       },
     },
-    async (connection: SocketStream, req: FastifyRequest) => {
+    async (connection, req: FastifyRequest) => {
       const { socket } = connection;
 
       try {
@@ -74,7 +73,7 @@ export async function orderRoutes(app: FastifyInstance) {
           logger.info({ orderId: order.id }, 'WebSocket connection closed');
         });
 
-        socket.on('error', (err) => {
+        socket.on('error', (err: Error) => {
           logger.error({ err, orderId: order.id }, 'WebSocket error');
           orderQueue.unregisterStatusCallback(order.id);
         });
